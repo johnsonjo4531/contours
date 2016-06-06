@@ -128,7 +128,7 @@ QUnit.test( "contours main function works as expected", function( assert ) {
 });
 
 QUnit.test( "simpleEscape works as expected", function( assert ) {
-  var {simpleEscape} = contours;
+  var {escapeHTML} = contours;
   var userText = '"><script>window.callback(); // malicous code could be here</script><div class="';
   window.callback = sinon.spy();
 
@@ -147,7 +147,7 @@ QUnit.test( "simpleEscape works as expected", function( assert ) {
   document.body.appendChild(
     contours.custom({
       includeScripts: true
-    })`<div data-name="${simpleEscape(userText)}"></div>`
+    })`<div data-name="${escapeHTML(userText)}"></div>`
   );
 
   assert.ok(!window.callback.called, "escaped user script isn't ran");

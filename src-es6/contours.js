@@ -48,7 +48,7 @@ var contours = (function contour () {
       "/": '&#x2F;'
   };
 
-  function simpleEscape (str) {
+  function escapeHTML (str) {
       return str.replace(/[&<>"'\/]/g, function (s) {
           return __entityMap[s];
       });
@@ -133,7 +133,7 @@ var contours = (function contour () {
         for(i = 0; i < value.length; ++i) {
           html += getNode("", userValues, value[i], strings, index);
         }
-      } else if (value instanceof NodeList) {
+      } else if (value instanceof NodeList || value instanceof HTMLCollection) {
         value = [].slice.call(value);
         for(i = 0; i < value.length; ++i) {
           html += getNode("", userValues, value[i], strings, index);
@@ -344,7 +344,7 @@ var contours = (function contour () {
   }
 
   return Object.assign(_contours, {
-    simpleEscape: simpleEscape,
+    escapeHTML: escapeHTML,
     textNode: function (text) {
       return document.createTextNode(text);
     },
