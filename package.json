@@ -1,8 +1,8 @@
 {
   "name": "contours",
   "version": "0.0.0",
-  "description": "The composable .innerHTML(). Pure JavaScript HTML view microlibrary with no dependencies. For use with ES2015 template strings.",
-  "main": "contours.js",
+  "description": "contours.js is a pure JavaScript HTML view microlibrary with no dependencies, but plays well with jQuery. For use with ES2015 template strings. contours.js makes .innerHTML() composable with DOM Nodes, HTMLCollections, ArrayLists, and optionally jQuery objects through the use of ES2015's template tag function.",
+  "main": "dist/contours.js",
   "directories": {
     "test": "tests"
   },
@@ -15,7 +15,8 @@
     "template-strings",
     "template-tag-function",
     "view",
-    "html"
+    "html",
+    "jQuery"
   ],
   "author": "John Johnson",
   "license": "MIT",
