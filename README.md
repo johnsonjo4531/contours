@@ -316,13 +316,14 @@ A simple HTML escape.
 
 Escapes the values on the left for the values on the right:
 
+```
 '&' : '&amp;'
 '<' : '&lt;'
 '>' : '&gt;'
 '"' : '&quot;'
 "'" : '&#39;'
 '/' : '&#x2F;'
-
+```
 
 ### contours.textNode()
 
