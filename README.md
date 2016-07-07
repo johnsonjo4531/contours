@@ -8,9 +8,9 @@ contours.js
 
 Contents
 ---
-- [Examples](#Examples)
-- [API](#API)
-- [License](#License)
+- [Examples](#examples)
+- [API](#api)
+- [License](#license)
 
 
 Examples
@@ -176,11 +176,11 @@ API
 ----
 ###### In alphabetical order:
 
-[contours](#contours)
-contours.attributes()
-contours.custom()
-contours.escapeHTML()
-contours.textNode()
+- [contours](#contours)
+- [contours.attributes()](#contoursattributes)
+- [contours.custom()](#contourscustom)
+- [contours.escapeHTML()](#contoursescapehtml)
+- [contours.textNode()](#contourstextnode)
 
 ### contours
 #### contours' template tag function
