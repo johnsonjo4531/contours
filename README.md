@@ -176,6 +176,12 @@ API
 ----
 ###### In alphabetical order:
 
+[contours](#contours)
+contours.attributes()
+contours.custom()
+contours.escapeHTML()
+contours.textNode()
+
 ### contours
 #### contours' template tag function
 
@@ -255,7 +261,6 @@ document.body.appendChild(el);
 
 This functions main purpose is to you set a DOM nodes attributes within a contours template tag function. It calls `Element.setAttribute()` internally. It is used in the contours template tag function in interpolation brackets wherever a normal HTML attribute could be placed in your markup.  When setting the style property its value can be either a style string or an object with camelCase letters or strings of the proper css style property. The camelCase properties will be converted to kabob-case internally for the style attributes provided. The use of a property starting with "on" e.g. "onclick" will use addEventListener (for the event with the name of the string with the "on" ommited e.g. "onmouseout" property will listen for "mouseout" events) on the target element internally. This works with custom events as well just append on to the beginning of the event name when adding it as a property to the object sent into the attributes function.
 
-
 ### contours.custom()
 
 Usage: `contours.custom({
@@ -295,7 +300,6 @@ document.getElementById("app").appendChild(
   `
 );
 ```
-
 ### contours.escapeHTML()
 
 Usage: `contours.escapeHTML('Some string you want to escape with possible HTML entities')`
