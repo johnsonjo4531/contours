@@ -21,9 +21,9 @@
   "author": "John Johnson",
   "license": "MIT",
   "devDependencies": {
-    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-es2015": "^6",
     "gulp": "^3.9.1",
-    "gulp-babel": "^6.1.2",
+    "gulp-babel": "^6",
     "gulp-istanbul": "^0.10.4",
     "gulp-plumber": "^1.1.0",
     "gulp-print": "^2.0.1",
@@ -31,7 +31,9 @@
     "gulp-rename": "^1.2.2",
     "gulp-watch": "^4.3.6",
     "jquery": "^2.2.4",
+    "karma": "^1.2.0",
     "qunit": "^0.9.1",
-    "qunitjs": "^2.0.0-rc1"
+    "qunitjs": "^2.0.0-rc1",
+    "sinon": "^1.17.5"
   }
 }

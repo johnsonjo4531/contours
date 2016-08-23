@@ -9,7 +9,7 @@ var gulp = require('gulp'),
     istanbul = require('gulp-istanbul'),
     Server = require('karma').Server;
 
-gulp.task('default', ["watchSrc", "watchTest"]);
+gulp.task('default', ["watchSrc", "watchTest", "watchExamples"]);
 
 gulp.task('watchSrc', function () {
   var trueBase = "src-es6/";
@@ -20,11 +20,7 @@ gulp.task('watchSrc', function () {
               .pipe(plumber({
                   errorHandler: function (error) { /* elided */console.log(error); }
               }))
-              .pipe(babel({
-          			presets: ['es2015'],
-                sourceMaps: true,
-                compact: false
-          		}))
+              .pipe(babel())
               .pipe(gulp.dest(buildLocation))
               .pipe(gprint(function(filePath){ return "File processed: " + filePath; }));
       }
@@ -40,15 +36,32 @@ gulp.task('watchTest', function() {
               .pipe(plumber({
                   errorHandler: function (error) { /* elided */console.log(error); }
               }))
-              .pipe(babel({
-          			presets: ['es2015'],
-                sourceMaps: true,
-                compact: false
-          		}))
+              .pipe(babel())
               .pipe(rename(function (path) {
                   path.basename = path.basename.replace(/-es6$/, '');
               }))
               .pipe(gulp.dest(buildLocation))
+              .pipe(gprint(function(filePath){ return "File processed: " + filePath; }));
+      }
+  });
+});
+
+gulp.task('watchExamples', function() {
+  var buildLocation = "examples/";
+  var trueBase = "src-es6-examples";
+  var suffix = '.js'
+  return gWatch(trueBase + '/**/*' + (suffix || ""), function(obj){
+      if (obj.event === 'change' || obj.event === 'add') {
+        console.log(obj.path);
+          gulp.src(obj.path)
+              .pipe(plumber({
+                  errorHandler: function (error) { /* elided */console.log(error); }
+              }))
+              .pipe(babel())
+              // .pipe(rename(function (path) {
+              //     path.basename = path.basename.replace(/-es6$/, '');
+              // }))
+              .pipe(gulp.dest(buildLocation + obj.relative.replace(/(.*[\/\\]+)?.*$/, '$1')))
               .pipe(gprint(function(filePath){ return "File processed: " + filePath; }));
       }
   });

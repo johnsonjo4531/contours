@@ -8,7 +8,8 @@ contours.js
 
 Contents
 ---
-- [Examples](#examples)
+- [Intro](#examples)
+- [Details](#details)
 - [API](#api)
 - [License](#license)
 
@@ -43,7 +44,8 @@ document.body.appendChild(contours`
     ${userData.map(function (user) {
       return contours`
         <div>
-          <img src="${contours.escapeHTML(user.picture)}"> ${contours.textNode(user.name)}
+          <img ${contours.attributes({src: user.picture })}">
+          ${contours.textNode(user.name)}
         </div>
       `;
       })}
@@ -59,24 +61,66 @@ The above produces HTML like this: (with different white-space)
   ...
   <div class="userlist">
     <div>
-      <img src="http://placehold.it/40x40"> Joe Jackson
+      <img src="http://placehold.it/40x40">
+      Joe Jackson
     </div>
     <div>
-      <img src="http://placehold.it/40x40"> Jessica Jackson
+      <img src="http://placehold.it/40x40">
+      Jessica Jackson
     </div>
     <div>
-      <img src="http://placehold.it/40x40"> Jimmy Jones
+      <img src="http://placehold.it/40x40">
+      Jimmy Jones
     </div>
   </div>
 </body>
 ```
+
+There are some syntax shortcuts available so the above could element could be created like so:
+
+```
+contours`
+  <div class="userlist">
+    ${userData.map(function (user) {
+      return contours`
+        <div>
+          <img $@${{src: user.picture }}">
+          $#${user.name}
+        </div>
+      `;
+      })}
+  </div>
+`
+```
+
+The image can also be done like so:
+```
+contours`
+  ...
+  <img src="${contours.escapeHTML(user.picture)}">
+  ...
+`
+```
+
+escapeHTML also has a syntax shortcut
+```
+contours`
+  ...
+  <img src="$${user.picture}">
+  ...
+`
+```
+
+Details
+----
 
 
 Contours' main function is a template tag function that returns a DOM node. Which looks like this when called.
 
 ```
 var el = contours`<div>Hello, world!</div>`;
-document.body.appendChild(el); // appends div element to body with content "Hello, world!"
+document.body.appendChild(el);
+// appends div element to body with content "Hello, world!"
  ```
 
  Be warned! Contours' main function will create nodes from whatever can be made into a node. This means it is not inherently safe (just as `Element.innerHTML =` and jQuery's main function) at least until you escape text yourself or insert elements as text nodes. This is no problem though with contours' big feature which will be covered in a second.
@@ -85,7 +129,8 @@ document.body.appendChild(el); // appends div element to body with content "Hell
  e.g.
 ```
 var foo = 6;
-console.log(`Views from the ${foo}.`) // logs "Views from the 6."
+console.log(`Views from the ${foo}.`)
+// logs "Views from the 6."
 ```
 Since it is a template tag function it is able to intercept the values sent into it. Contours big feature is the ability to add DOM nodes, HTMLCollections, NodeLists, and jQuery wrapped elements that are sent in through the interpolation brackets (e.g. `${}`) to the spot they are located in the markup. With this feature you can easily append text nodes in your markup.
 
@@ -101,7 +146,7 @@ Note when you are sending a text node to contours it needs to be in a spot where
 
 Contours also supplies these utilities: `contours.textNode()` which is just a simple wrapper around `document.createTextNode()` and `contours.escapeHTML()` which is just a simple escaping function for HTML entities.
 
-Say we have the following user text. and we wanted to insert it into an attribute safely. The text could be anything, but this user is particularly crafty.
+Say we have the following user text, and we wanted to insert it into an attribute safely. The text could be anything, but this user is particularly crafty.
 ```
 var maliciousUsersText = '"> <script>alert("something malicious")</script>';
 ```
@@ -134,7 +179,6 @@ There is also the `contours.custom()` which accepts an options object and return
 ```
 document.body.appendChild(
   contours.custom({
-    multipleRoots: true,
     includeScripts: true
   })`
     <div>
@@ -152,7 +196,6 @@ It can also be saved to a variable to be used more than once.
 
 ```
 var myContours = contours.custom({
-  multipleRoots: true,
   includeScripts: true
 });
 
@@ -177,6 +220,7 @@ API
 ###### In alphabetical order:
 
 - [contours](#contours)
+  - [syntax shortcuts](#syntaxshortcuts)
 - [contours.attributes()](#contoursattributes)
 - [contours.custom()](#contourscustom)
 - [contours.escapeHTML()](#contoursescapehtml)
@@ -205,7 +249,7 @@ document.body.appendChild(contours`
       ${data.map(data => {
         return contours`
           <tr>
-            ${data.map((datum) => contours`<td>${contours.textNode(datum)}</td>`)}
+            ${data.map((datum) => contours`<td>$#${datum}</td>`)}
           </tr>`;
       })}
     </tbody>
@@ -227,7 +271,15 @@ A template tag function which constructs HTML from the strings and interpolation
 
 Once this function is finished building the string it will use `.innerHTML()` internally to build the DOM nodes. This means your user entered values are not safe unless they are: placed in a text Node, set in an attribute using `contours.attributes()` or escaped. After `.innerHTML` has been called it will walk through the newly created DOM tree replacing temporary elements with their sent in values and also checking if an element needs it's attributes set.
 
-Things to note are: contours accepts only single root nodes you can't have multiple root nodes unless you call `contours.custom()`. This ensures that a node you specified is returned instead of a document fragment. Contours also doesn't run script tags by default you will have to check `contours.custom()` for the option.
+Things to note are: Contours doesn't run script tags by default you will have to check `contours.custom()` for the option. (note that script can still be run through plain strings in contours through on handlers e.g. onclick)
+
+### syntax shortcuts
+
+The following are syntax shortcuts:
+
+- `$@${expression}`: wraps value of expression in contours.attributes before sending in the value.
+- `$#${expression}`: wraps value of expression in contours.textNode before sending in the value.
+- `$${expression}`: wraps value of expression in escapeHTML before sending in the value.
 
 ### contours.attributes()
 
@@ -275,8 +327,7 @@ example:
 ```
 // contours template tag function with all non-default options applied
 var myContours = contours.custom({
-  includeScripts: true,
-  multipleRoots: true
+  includeScripts: true
 });
 
 document.body.appendChild(myContours`
