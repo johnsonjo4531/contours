@@ -44,7 +44,7 @@ document.body.appendChild(contours`
     ${userData.map(function (user) {
       return contours`
         <div>
-          <img ${contours.attributes({src: user.picture })}">
+          <img ${contours.attributes({src: user.picture })}>
           ${contours.textNode(user.name)}
         </div>
       `;
