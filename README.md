@@ -11,6 +11,12 @@ Contents
 - [Intro](#examples)
 - [Details](#details)
 - [API](#api)
+  - [contours](#contours)
+    - [syntax shortcuts](#syntax-shortcuts)
+  - [contours.attributes()](#contoursattributes)
+  - [contours.custom()](#contourscustom)
+  - [contours.escapeHTML()](#contoursescapehtml)
+  - [contours.textNode()](#contourstextnode)
 - [License](#license)
 
 
@@ -220,7 +226,7 @@ API
 ###### In alphabetical order:
 
 - [contours](#contours)
-  - [syntax shortcuts](#syntaxshortcuts)
+  - [syntax shortcuts](#syntax-shortcuts)
 - [contours.attributes()](#contoursattributes)
 - [contours.custom()](#contourscustom)
 - [contours.escapeHTML()](#contoursescapehtml)
