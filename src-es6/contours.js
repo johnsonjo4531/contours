@@ -37,6 +37,10 @@ if(!Object.entries) {
 }
 
 var contours = (function contour () {
+  const CONTOURS_ATTRIBUTES_KEY = "__contours_attributes__",
+        CONTOURS_ATTRIBUTES_TEMP_ATTR = "data-contours-attrs",
+        CONTOURS_UNIQUE_CLASS = "contours-shouldBeUnique",
+        CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__";
   var jQueryTemp = typeof jQuery !== "undefined" ? jQuery : function noJQuery () {};
 
   // var __entityMap = {
@@ -78,39 +82,63 @@ var contours = (function contour () {
   }
 
   function getReplaceText(strings, index) {
-    return '<template class="contours-shouldBeUnique"></template>';
+    return `<template class="${CONTOURS_UNIQUE_CLASS}"></template>`;
   }
 
   function getNode (nodeValues, attributeValues, value, strings, index) {
     var i, html = "";
     if(value || value === 0) {
       if(value instanceof Node) {
+        // value is a dom node 
+        // replace it in the string with a temporary template node
         html += getReplaceText(strings, index);
         nodeValues.push(value);
       } else if(value instanceof jQueryTemp) {
+        // value is jQuery element
+        // replace it in the string with a temporary template node
         html += getReplaceText(strings, index);
         nodeValues.push(value);
       } else if (Array.isArray(value)) {
+        // value is Array element
+        // call getNode recursively for each element of the array.
         for(i = 0; i < value.length; ++i) {
           html += getNode(nodeValues, attributeValues, value[i], strings, index);
         }
       } else if (value instanceof NodeList || value instanceof HTMLCollection) {
+        // value is some form of NodeList
+        // call getNode recursively for each element
         value = [].slice.call(value);
         for(i = 0; i < value.length; ++i) {
           html += getNode(nodeValues, attributeValues, value[i], strings, index);
         }
-      } else if (value !== null && typeof value === "object" && value["__contours_attributes__"]) {
-        html += " data-contours-attrs ";
-        delete value["__contours_attributes__"];
-        attributeValues.push(value);
+      } else if (value !== null && typeof value === "object") {
+        // checking for special contours objects which have
+        // special keys on them
+        if(value[CONTOURS_ATTRIBUTES_KEY]) {
+          // add an attribute placeholder to html element at current location in string
+          // it's up to the user to guarantee that they
+          // have a valid placement
+          html += " " + CONTOURS_ATTRIBUTES_TEMP_ATTR + " ";
+          delete value[CONTOURS_ATTRIBUTES_KEY];
+          attributeValues.push(value);
+        } else if (value[CONTOURS_NONESCAPING_HTML_KEY]) {
+          // makes the value injectable html 
+          // WARNING: this is not safe...
+          html += value.val;
+        }
       } else {
-        html += value;
+        // escape value otherwise
+        html += contours.escapeHTML("" + value);
       }
     }
     return html;
   }
 
   function DOMTemplate (strings, values, options = {}) {
+    // this is contours main function
+    // DOMTemplate goes through a string building process
+    // then a linking process to link values that can't be
+    // added with pure strings like DOM elements and the like
     var defaults = {
       includeScripts: false
     };
@@ -126,19 +154,33 @@ var contours = (function contour () {
         replace,
         replacement;
 
+    // string building process
     let i;
     for(i = 0; i < values.length; ++i) {
       let string = strings[i];
       let value = values[i];
       let prev2Chars = string.slice(-2);
       if(prev2Chars == "$#") {
+        // add the value as a text node at current string location
+        // it's up to the user to guarantee that they
+        // have a valid placement
         value = contours.textNode(value);
         string = string.slice(0, -2);
       } else if (prev2Chars == "$@") {
+        // add the value as an attribute to the element at current string location
+        // it's up to the user to guarantee that they
+        // have a valid placement
         value = contours.attributes(value);
         string = string.slice(0, -2);
-      } else if (string.slice(-1) == "$") {
-        value = contours.escapeHTML(value);
+      } else if (prev2Chars == "$*") {
+        // makes the value injectable html 
+        // WARNING: this is not safe...
+        value = contours.nonEscapingHTML(value);
+        string = string.slice(0, -2);
+      }else if (string.slice(-1) == "$") {
+        // escaping is the default now no need to change value
+        // value = contours.escapeHTML(value);
+        // this will probably be deprecated in a future version
         string = string.slice(0, -1);
       }
 
@@ -148,6 +190,10 @@ var contours = (function contour () {
     }
     html += strings[i];
 
+
+    // linking process:
+    // This creates the html and traverses it
+    // adding in the values given by the user.
     nodes = parseHTML(html);
     let arrNodes = [].slice.call(nodes);
     for(let i = 0; i < nodes.length; ++i) {
@@ -170,7 +216,7 @@ var contours = (function contour () {
     }
 
     if(node.nodeType === Node.ELEMENT_NODE) {
-      if(node.className === "contours-shouldBeUnique") {
+      if(node.className === CONTOURS_UNIQUE_CLASS) {
         if(nodeValues.length > 0) {
           replacement = nodeValues.shift();
           if(replacement instanceof jQueryTemp) {
@@ -180,10 +226,10 @@ var contours = (function contour () {
           }
         }
       } else {
-        if(node.hasAttribute("data-contours-attrs")) {
+        if(node.hasAttribute(CONTOURS_ATTRIBUTES_TEMP_ATTR)) {
           if(attributeValues.length > 0) {
             setAttributes(node, attributeValues.shift());
-            node.removeAttribute("data-contours-attrs");
+            node.removeAttribute(CONTOURS_ATTRIBUTES_TEMP_ATTR);
           }
         }
         if (options.includeScripts && (node.tagName || "").toUpperCase() === 'SCRIPT') {
@@ -214,13 +260,13 @@ var contours = (function contour () {
     var j = 0;
     nodes.forEach(function (el) {
       if(typeof el.getElementsByClassName === "function") {j
-        var uniqueEls = [].slice.call(el.querySelectorAll("[data-contours-attrs]"));
-        if(el.hasAttribute("data-contours-attrs")) {
+        var uniqueEls = [].slice.call(el.querySelectorAll(`[${CONTOURS_ATTRIBUTES_TEMP_TXT}]`));
+        if(el.hasAttribute(CONTOURS_ATTRIBUTES_TEMP_TXT)) {
           uniqueEls.push(el);
         }
         for(var i = 0; i < uniqueEls.length; ++i, ++j) {
           setAttributes(uniqueEls[i], attributeValues[j]);
-          uniqueEls[i].removeAttribute("data-contours-attrs");
+          uniqueEls[i].removeAttribute(CONTOURS_ATTRIBUTES_TEMP_TXT);
         }
       }
     });
@@ -301,12 +347,23 @@ var contours = (function contour () {
 
   function attributes (obj) {
     return Object.assign({}, obj, {
-      "__contours_attributes__": true
+      // the [] brackets denote a computed property
+      // the value of the variable will be the property
+      [CONTOURS_ATTRIBUTES_KEY]: true
     });
   }
 
+  function nonEscapingHTML(val = "") {
+    return {
+      [CONTOURS_NONESCAPING_HTML_KEY]: true,
+      val: val 
+    }
+  }
+
+  // we're giving the contours function some extra properties.
   return Object.assign(_contours, {
     escapeHTML: escapeHTML,
+    nonEscapingHTML: nonEscapingHTML,
     textNode: function (text) {
       return document.createTextNode(text);
     },

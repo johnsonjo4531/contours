@@ -145,7 +145,7 @@ QUnit.test( "simpleEscape works as expected", function( assert ) {
   document.body.appendChild(
     contours.custom({
       includeScripts: true
-    })`<div data-name="${userText}"></div>`
+    })`<div data-name="$*${userText}"></div>`
   );
 
 
