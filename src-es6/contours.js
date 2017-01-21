@@ -178,9 +178,9 @@ var contours = (function contour () {
         value = contours.nonEscapingHTML(value);
         string = string.slice(0, -2);
       }else if (string.slice(-1) == "$") {
-        // escaping is the default now no need to change value
-        // value = contours.escapeHTML(value);
-        // this will probably be deprecated in a future version
+        // escaping is the default now but make sure its a string
+        // so it gets escaped
+        value = "" + value;
         string = string.slice(0, -1);
       }
 
