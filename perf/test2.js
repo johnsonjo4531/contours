@@ -2,7 +2,6 @@ let rows = 10000;
 let columns = 10;
 let time = getPerf(() => {
     rows = rows;
-    rows = rows;
     var fragment = document.createDocumentFragment();
     var table = document.createElement('table');
     for(let i = 0; i < rows; ++i){
@@ -39,4 +38,53 @@ time = getPerf(() => {
 });
 
 report(`contours time: ${time} ms.`);
+
+time = getPerf(() => {
+    var frag = contours`
+    <table>
+        ${[...Array(rows).keys()].reduce((frag, i) => {
+                frag.appendChild(contours`<tr>${
+                    [...Array(columns).keys()].reduce((frag)=> {
+                        frag.appendChild(contours`<td>${i}</td>`);
+                        return frag;
+                    }, document.createDocumentFragment())
+                }</tr>`);
+                return frag;
+            }, document.createDocumentFragment())
+        }
+    </table>
+    `;
+
+    document.body.appendChild(frag);
+});
+
+report(`contours time reduce: ${time} ms.`);
+
+function reduceFrag (arr, cbFunc) {
+    arr.reduce((frag, el, i, arr) => {
+        frag.appendChild(cbFunc(el, i, arr));
+        return frag
+    }, document.createDocumentFragment());
+}
+
+time = getPerf(() => {
+    var frag = contours`
+    <table>
+        ${[...Array(rows).keys()].reduce((frag, i) => {
+                frag.appendChild(contours`<tr>${
+                    [...Array(columns).keys()].reduce((frag)=> {
+                        frag.appendChild(contours`<td>${i}</td>`);
+                        return frag;
+                    }, document.createDocumentFragment())
+                }</tr>`);
+                return frag;
+            }, document.createDocumentFragment())
+        }
+    </table>
+    `;
+
+    document.body.appendChild(frag);
+});
+
+report(`contours time reduce: ${time} ms.`);
 

@@ -246,7 +246,9 @@ var contours = (function contour () {
     nodes = parseHTML(html);
     let arrNodes = [].slice.call(nodes);
     for(let i = 0; i < nodes.length; ++i) {
-      traverseDOM(arrNodes[i], nodeValues.slice(), attributeValues.slice(), options);
+      if(!(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts)) {
+        traverseDOM(arrNodes[i], nodeValues.slice(), attributeValues.slice(), options);
+      } 
     }
     let fragment = document.createDocumentFragment();
     let length = nodes.length;
@@ -260,9 +262,6 @@ var contours = (function contour () {
   function traverseDOM (node, nodeValues, attributeValues, options) {
     var replaced = false;
     var replacement;
-    if(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
-      return;
-    }
 
     if(node.nodeType === Node.ELEMENT_NODE) {
       if(node.className === CONTOURS_UNIQUE_CLASS) {
@@ -292,7 +291,11 @@ var contours = (function contour () {
         var children = node.childNodes;
         for (var i = 0; i < children.length; i++) {
           let child = children[i];
-          traverseDOM( child, nodeValues, attributeValues, options );
+          if(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
+            return;
+          } else {
+            traverseDOM( child, nodeValues, attributeValues, options );
+          }
         }
       }
     }

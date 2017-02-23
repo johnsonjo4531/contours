@@ -6,8 +6,7 @@ let time = getPerf(() => {
     var fragment = document.createDocumentFragment();
     for(let i = 0; i < numDivs; ++i){
         var newDiv = document.createElement('div');
-        // newDiv.setAttribute("data-cntrs-srchd", true);
-        
+
         newDiv.innerHTML = 'Actually, the DOM is fast.';
 
         fragment.appendChild(newDiv);
@@ -18,13 +17,11 @@ let time = getPerf(() => {
 report(`Vanilla JS time: ${time} ms.`);
 
 time = getPerf(() => {
-    function getEl () {
-        return contours`<div>Actually the DOM is fast.</div>`
-    }
-
+    var innerDivs = Array.from(Array(numDivs).keys())
+                    .map(() => contours`<div>Actually the DOM is fast.</div>`);
     var frag = contours`
     <div>
-        ${Array.from(Array(numDivs).keys()).map(getEl)}
+        ${innerDivs}
     </div>
     `;
 

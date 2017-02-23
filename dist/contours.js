@@ -326,7 +326,9 @@
       nodes = parseHTML(html);
       var arrNodes = [].slice.call(nodes);
       for (var _i = 0; _i < nodes.length; ++_i) {
-        traverseDOM(arrNodes[_i], nodeValues.slice(), attributeValues.slice(), options);
+        if (!(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts)) {
+          traverseDOM(arrNodes[_i], nodeValues.slice(), attributeValues.slice(), options);
+        }
       }
       var fragment = document.createDocumentFragment();
       var length = nodes.length;
@@ -339,9 +341,6 @@
     function traverseDOM(node, nodeValues, attributeValues, options) {
       var replaced = false;
       var replacement;
-      if (attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
-        return;
-      }
 
       if (node.nodeType === Node.ELEMENT_NODE) {
         if (node.className === CONTOURS_UNIQUE_CLASS) {
@@ -371,7 +370,11 @@
           var children = node.childNodes;
           for (var i = 0; i < children.length; i++) {
             var child = children[i];
-            traverseDOM(child, nodeValues, attributeValues, options);
+            if (attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
+              return;
+            } else {
+              traverseDOM(child, nodeValues, attributeValues, options);
+            }
           }
         }
       }
