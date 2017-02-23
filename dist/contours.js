@@ -116,10 +116,17 @@
   }
 
   var contours = function contour() {
+    // added to objects to show that the object is meant to be an attributes object
     var CONTOURS_ATTRIBUTES_KEY = "__contours_attributes__",
-        CONTOURS_ATTRIBUTES_TEMP_ATTR = "data-contours-attrs",
-        CONTOURS_UNIQUE_CLASS = "contours-shouldBeUnique",
-        CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__";
+
+    // temp attribute added to signify this element has attributes to be added
+    CONTOURS_ATTRIBUTES_TEMP_ATTR = "data-contours-attrs",
+
+    // a unique class used for pinpointing contours value placeholder elements
+    CONTOURS_UNIQUE_CLASS = "contours-shouldBeUnique",
+
+    // added to objects to show that the object is meant to be an hold escaped html
+    CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__";
     var jQueryTemp = typeof jQuery !== "undefined" ? jQuery : function noJQuery() {};
 
     // var __entityMap = {
@@ -159,31 +166,68 @@
     }
 
     function getNode(nodeValues, attributeValues, value, strings, index) {
+      var docFrag = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
       var i,
           html = "";
       if (value || value === 0) {
         if (value instanceof Node) {
           // value is a dom node 
           // replace it in the string with a temporary template node
-          html += getReplaceText(strings, index);
-          nodeValues.push(value);
+          if (!docFrag) {
+            html += getReplaceText(strings, index);
+            nodeValues.push(value);
+          } else {
+            docFrag.appendChild(value);
+          }
         } else if (value instanceof jQueryTemp) {
           // value is jQuery element
           // replace it in the string with a temporary template node
-          html += getReplaceText(strings, index);
-          nodeValues.push(value);
+          if (!docFrag) {
+            html += getReplaceText(strings, index);
+            nodeValues.push(value);
+          } else {
+            value.appendTo(docFrag);
+          }
         } else if (Array.isArray(value)) {
           // value is Array element
           // call getNode recursively for each element of the array.
+          var frag = document.createDocumentFragment();
           for (i = 0; i < value.length; ++i) {
-            html += getNode(nodeValues, attributeValues, value[i], strings, index);
+            html += getNode(nodeValues, attributeValues, value[i], strings, index, frag);
+          }
+          if (!docFrag) {
+            html += getReplaceText(strings, index);
+            nodeValues.push(frag);
+          } else {
+            docFrag.appendChild(frag);
+          }
+        } else if (Array.isArray(value)) {
+          // value is Array element
+          // call getNode recursively for each element of the array.
+          var _frag = document.createDocumentFragment();
+          for (i = 0; i < value.length; ++i) {
+            html += getNode(nodeValues, attributeValues, value[i], strings, index, _frag);
+          }
+          if (!docFrag) {
+            html += getReplaceText(strings, index);
+            nodeValues.push(_frag);
+          } else {
+            docFrag.appendChild(_frag);
           }
         } else if (value instanceof NodeList || value instanceof HTMLCollection) {
           // value is some form of NodeList
           // call getNode recursively for each element
+          var _frag2 = document.createDocumentFragment();
           value = [].slice.call(value);
-          for (i = 0; i < value.length; ++i) {
-            html += getNode(nodeValues, attributeValues, value[i], strings, index);
+          if (!docFrag) {
+            for (i = 0; i < value.length; ++i) {
+              getNode(nodeValues, attributeValues, value[i], strings, index, _frag2);
+            }
+            html += getReplaceText(strings, index);
+            nodeValues.push(_frag2);
+          } else {
+            docFrag.appendChild(_frag2);
           }
         } else if (value !== null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === "object") {
           // checking for special contours objects which have
@@ -192,17 +236,27 @@
             // add an attribute placeholder to html element at current location in string
             // it's up to the user to guarantee that they
             // have a valid placement
+            if (docFrag) {
+              throw new Error("There shouldn't be a contours attribute in an array given to contours. Value given: " + JSON.stringify(value));
+            }
             html += " " + CONTOURS_ATTRIBUTES_TEMP_ATTR + " ";
             delete value[CONTOURS_ATTRIBUTES_KEY];
             attributeValues.push(value);
           } else if (value[CONTOURS_NONESCAPING_HTML_KEY]) {
             // makes the value injectable html 
             // WARNING: this is not safe...
+            if (docFrag) {
+              throw new Error("There shouldn't be injectable HTML inside an array given to contours. Value given: " + JSON.stringify(value));
+            }
             html += value.val;
           }
         } else {
           // escape value otherwise
-          html += contours.escapeHTML("" + value);
+          if (!docFrag) {
+            html += contours.escapeHTML("" + value);
+          } else {
+            docFrag.appendChild(contours.textNode(value));
+          }
         }
       }
       return html;
@@ -283,7 +337,7 @@
     }
 
     function traverseDOM(node, nodeValues, attributeValues, options) {
-      var notReplaced = true;
+      var replaced = false;
       var replacement;
       if (attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
         return;
@@ -298,6 +352,7 @@
             } else {
               node.parentNode.replaceChild(replacement, node);
             }
+            replaced = true;
           }
         } else {
           if (node.hasAttribute(CONTOURS_ATTRIBUTES_TEMP_ATTR)) {
@@ -311,11 +366,12 @@
           }
         }
 
-        if (notReplaced) {
+        if (!replaced) {
           var i = 0;
           var children = node.childNodes;
-          while (i < children.length) {
-            traverseDOM(children[i++], nodeValues, attributeValues, options);
+          for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            traverseDOM(child, nodeValues, attributeValues, options);
           }
         }
       }
