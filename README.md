@@ -198,8 +198,8 @@ Below are interpolation rules for the contours function
 ### Interpolation rules
 
 The following are valid interpolation symbols and their functionality with contours:
-- `${}`: if the value is a node like value insert it as a Node. Node like expressions must be positioned in a valid node position so make sure your value is in the right spot. If the value is a string escape it. If the value is an array containing only strings or string like objects (like safeHTML) contours will concatenate and append them as strings. If the value is an array 
-- `$@${expression}`: inserts value as an attribute to an element. Must be used within an opening tag at a valid attribute location.
+- `${expression}`: if the value is a node like value insert it as a Node. Node like expressions must be positioned in a valid node position so make sure your value is in the right spot. If the value is a string escape it. If the value is an array containing only strings or string like objects (like safeHTML) contours will concatenate and append them as strings. If the value is an array 
+- `$@${expression}`: inserts value as an attribute to an element. Must be used within an opening tag at a valid attribute location. When setting the style property its value can be either a style string or an object with camelCase letters or strings of the proper css style property. The camelCase properties will be converted to kabob-case internally for the style attributes provided. The use of a property starting with "on" e.g. "onclick" will use addEventListener (for the event with the name of the string with the "on" ommited e.g. "onmouseout" property will listen for "mouseout" events) on the target element internally. This works with custom events as well just prepend 'on' to the beginning of the event name when adding it as a property to the object sent into the attributes function.
 - `$#${expression}`: inserts value of expression in a text node. Must be placed any where a node can be placed.
 - `$*${expression}`: inserts value of expression in escapeHTML before sending in the value.
 
@@ -226,39 +226,6 @@ description:
 The safeHTML object is an obj with a property named `data` for the string being built. A custom property so contours can recognize it as a safeHTML obj and it has a `toFrag` method that turns the html into a document fragment.
 
 safeHTML is faster than using contours' main function because it doesn't parse and create the created HTML until you tell it to create a document fragment by calling toFrag. This means if your creating 1000s of elements safeHTML is the way to go. The only down side is that you can only insert strings, safeHTML objects, or arrays containing only those two. You cannot add nodes into safeHTML.
-
-### contours.attributes()
-
-Usage: `contours.attributes({
-  propertyOfAttribute: valueOfAttribute,
-  moreProps: andValues
-})`
-
-function declaration: `contours.attributes(object)`
-
-return value: object with added special property which allows contours template tag function to interpret it as an element which holds attributes for the given DOM node it's placed on.
-
-example:
-
-```
-var showBlueBackground = false;
-var attrs = {
-  onclick: function () {
-    showBlueBackground = !showBlueBackground; // toggle showBlueBackground between true and false
-    this.style.backgroundColor = showBlueBackground ? "blue" : ""; // The ? and the : is the ternary operator.
-  },
-  class: "someClass",
-  style: "padding: 10px; margin: 10px;"
-}
-
-var el = contours`
-  <div ${contours.attributes(attrs)}>Click Me!</div>
-`;
-
-document.body.appendChild(el);
-```
-
-This functions main purpose is to you set a DOM nodes attributes within a contours template tag function. It calls `Element.setAttribute()` internally. It is used in the contours template tag function in interpolation brackets wherever a normal HTML attribute could be placed in your markup.  When setting the style property its value can be either a style string or an object with camelCase letters or strings of the proper css style property. The camelCase properties will be converted to kabob-case internally for the style attributes provided. The use of a property starting with "on" e.g. "onclick" will use addEventListener (for the event with the name of the string with the "on" ommited e.g. "onmouseout" property will listen for "mouseout" events) on the target element internally. This works with custom events as well just append on to the beginning of the event name when adding it as a property to the object sent into the attributes function.
 
 ### contours.custom()
 
