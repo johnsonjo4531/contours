@@ -145,6 +145,7 @@ API
 
 - [contours](#contours)
   - [Interpolation Rules](#interpolation-rules)
+- [contours.safeHTML](#contourssafehtml)
 - [contours.custom()](#contourscustom)
 
 ### contours
