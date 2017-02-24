@@ -44,23 +44,9 @@ var contours = (function contour () {
         // a unique class used for pinpointing contours value placeholder elements
         CONTOURS_UNIQUE_CLASS = "contours-shouldBeUnique",
         // added to objects to show that the object is meant to be an hold escaped html
-        CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__";
+        CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__",
+        CONTOURS_HTML_STRING = "__contours_html_string__";
   var jQueryTemp = typeof jQuery !== "undefined" ? jQuery : function noJQuery () {};
-
-  // var __entityMap = {
-  //     "&": "&amp;",
-  //     "<": "&lt;",
-  //     ">": "&gt;",
-  //     '"': '&quot;',
-  //     "'": '&#39;',
-  //     "/": '&#x2F;'
-  // };
-  //
-  // function escapeHTML (str) {
-  //     return str.replace(/[&<>"'\/]/g, function (s) {
-  //         return __entityMap[s];
-  //     });
-  // }
 
   function escapeHTML(str){
 		// this is a basic parser
@@ -83,6 +69,44 @@ var contours = (function contour () {
     let el = document.createElement("template");
   	el.innerHTML = markup;
     return el.content.childNodes;
+  }
+
+  function appendFrag (nodes) {
+    let fragment = document.createDocumentFragment();
+    let length = nodes.length;
+    for(let i = 0; i < length; ++i) {
+      fragment.appendChild(nodes[0]);
+    }
+    return fragment;
+  }
+
+  function parseHTMLDocFrag (markup) {
+    return appendFrag(parseHTML(markup));
+  }
+
+  function toFrag (html, options) {
+    var defaults = {
+      scripts: false
+    };
+    options = Object.assign({}, defaults, options);
+    let frag;
+    if(typeof html === "object" && html[CONTOURS_HTML_STRING]) {
+      frag = parseHTMLDocFrag(html.data);
+    } else if (typeof html === "string") {
+      frag = parseHTMLDocFrag(html);
+    } else {
+      throw new Error("type should be a string or contours string")
+    }
+    if(options.scripts) {
+      var scripts = [].slice.call(frag.childNodes).reduce((arr, node) =>{
+        return arr.concat([].slice.call(node.getElementsByTagName("script")));
+      }, []);
+      scripts = [].slice.call(scripts);
+      for(let i = 0; i < scripts.length; ++i) {
+        enableScript(scripts[i]);
+      }
+    }
+    return frag;
   }
 
   function getReplaceText(strings, index) {
@@ -113,22 +137,18 @@ var contours = (function contour () {
       } else if (Array.isArray(value)) {
         // value is Array element
         // call getNode recursively for each element of the array.
+        if(value.every((val) => typeof val === 'string' || typeof val === 'object' && val[CONTOURS_HTML_STRING])) {
+          html += getHTMLForStringHTML(value);
+          if(!docFrag) {
+            return html;
+          } else {
+            docFrag.appendChild(parseHTMLDocFrag(html));
+            return html;
+          }
+        }
         let frag = document.createDocumentFragment();
         for(i = 0; i < value.length; ++i) {
           html += getNode(nodeValues, attributeValues, value[i], strings, index,frag);
-        }
-        if(!docFrag) {
-          html += getReplaceText(strings, index);
-          nodeValues.push(frag);
-        } else {
-          docFrag.appendChild(frag)
-        }
-      } else if (Array.isArray(value)) {
-        // value is Array element
-        // call getNode recursively for each element of the array.
-        let frag = document.createDocumentFragment();
-        for(i = 0; i < value.length; ++i) {
-          html += getNode(nodeValues, attributeValues, value[i], strings, index, frag);
         }
         if(!docFrag) {
           html += getReplaceText(strings, index);
@@ -170,17 +190,72 @@ var contours = (function contour () {
             throw new Error("There shouldn't be injectable HTML inside an array given to contours. Value given: " + JSON.stringify(value));
           }
           html += value.val;
+        } else if (value[CONTOURS_HTML_STRING]) {
+          if(!docFrag) {
+            html += value.data;
+          } else {
+            docFrag.appendChild(parseHTMLDocFrag(value.data));
+          }
         }
       } else {
         // escape value otherwise
         if(!docFrag) {
-          html += contours.escapeHTML("" + value);
+          html += escapeHTML("" + value);
         } else {
-          docFrag.appendChild(contours.textNode(value));
+          docFrag.appendChild(document.createTextNode(value));
         }
       }
     }
     return html;
+  }
+
+  function getHTMLForStringHTML (values) {
+    return values.reduce(function (html, val) {
+        if(typeof val === "object" && val[CONTOURS_HTML_STRING]) {
+          return html + val.data
+        } else {
+          return html + escapeHTML(val);
+        }
+      }, "");
+  }
+
+  function safeHTML (strings, ...values) {
+    let html = "";
+    let i;
+    for(i = 0; i < values.length; ++i) {
+      let string = strings[i];
+      let value = values[i];
+      let prev2Chars = string.slice(-2);
+      if (prev2Chars == "$*") {
+        // makes the value injectable html 
+        // WARNING: this is not safe...
+        string = string.slice(0, -2);
+        // do nothing to value just let it be concatenated
+      } else if(typeof value === "object" && value[CONTOURS_HTML_STRING]) {
+        value = value.data;
+      } else if (Array.isArray(value)) {
+        value = getHTMLForStringHTML(value)
+      } else {
+        value = escapeHTML("" +value);
+      }
+
+      html += strings[i];
+
+      if(Array.isArray(value)) {
+        for(let j = 0; i <value.length; ++i) {
+            html += value;
+        }
+      } else {
+        html += value;
+      }
+    }
+    html += strings[i];
+
+    return {
+      [CONTOURS_HTML_STRING]: true,
+      data: html,
+      toFrag: (options) => toFrag(html, options)
+    };
   }
 
   function DOMTemplate (strings, values, options = {}) {
@@ -189,7 +264,7 @@ var contours = (function contour () {
     // then a linking process to link values that can't be
     // added with pure strings like DOM elements and the like
     var defaults = {
-      includeScripts: false
+      scripts: false
     };
 
     options = Object.assign({}, defaults, options);
@@ -213,24 +288,19 @@ var contours = (function contour () {
         // add the value as a text node at current string location
         // it's up to the user to guarantee that they
         // have a valid placement
-        value = contours.textNode(value);
+        value = document.createTextNode(value);
         string = string.slice(0, -2);
       } else if (prev2Chars == "$@") {
         // add the value as an attribute to the element at current string location
         // it's up to the user to guarantee that they
         // have a valid placement
-        value = contours.attributes(value);
+        value = attributes(value);
         string = string.slice(0, -2);
       } else if (prev2Chars == "$*") {
         // makes the value injectable html 
         // WARNING: this is not safe...
-        value = contours.nonEscapingHTML(value);
+        value = nonEscapingHTML(value);
         string = string.slice(0, -2);
-      }else if (string.slice(-1) == "$") {
-        // escaping is the default now but make sure its a string
-        // so it gets escaped
-        value = "" + value;
-        string = string.slice(0, -1);
       }
 
       html += string;
@@ -245,16 +315,12 @@ var contours = (function contour () {
     // adding in the values given by the user.
     nodes = parseHTML(html);
     let arrNodes = [].slice.call(nodes);
-    for(let i = 0; i < nodes.length; ++i) {
-      if(!(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts)) {
-        traverseDOM(arrNodes[i], nodeValues.slice(), attributeValues.slice(), options);
-      } 
+    if(!(attributeValues.length === 0 && nodeValues.length === 0 && !options.scripts)) {
+      for(let i = 0; i < nodes.length; ++i) {
+          traverseDOM(arrNodes[i], nodeValues.slice(), attributeValues.slice(), options);
+      }
     }
-    let fragment = document.createDocumentFragment();
-    let length = nodes.length;
-    for(let i = 0; i < length; ++i) {
-      fragment.appendChild(nodes[0]);
-    }
+    let fragment = appendFrag(nodes);
     return fragment;
 
   }
@@ -281,8 +347,8 @@ var contours = (function contour () {
             node.removeAttribute(CONTOURS_ATTRIBUTES_TEMP_ATTR);
           }
         }
-        if (options.includeScripts && (node.tagName || "").toUpperCase() === 'SCRIPT') {
-          node.parentNode.replaceChild( nodeScriptClone(node) , node );
+        if (options.scripts && (node.tagName || "").toUpperCase() === 'SCRIPT') {
+          enableScript(node);
         }
       }
 
@@ -291,7 +357,7 @@ var contours = (function contour () {
         var children = node.childNodes;
         for (var i = 0; i < children.length; i++) {
           let child = children[i];
-          if(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
+          if(attributeValues.length === 0 && nodeValues.length === 0 && !options.scripts) {
             return;
           } else {
             traverseDOM( child, nodeValues, attributeValues, options );
@@ -299,6 +365,10 @@ var contours = (function contour () {
         }
       }
     }
+  }
+
+  function enableScript (node) {
+    node.parentNode.replaceChild( nodeScriptClone(node) , node );
   }
 
   function nodeScriptClone(node){
@@ -313,7 +383,7 @@ var contours = (function contour () {
   function setAttributesAll (nodes, attributeValues) {
     var j = 0;
     nodes.forEach(function (el) {
-      if(typeof el.getElementsByClassName === "function") {j
+      if(typeof el.querySelectorAll === "function") {j
         var uniqueEls = [].slice.call(el.querySelectorAll(`[${CONTOURS_ATTRIBUTES_TEMP_TXT}]`));
         if(el.hasAttribute(CONTOURS_ATTRIBUTES_TEMP_TXT)) {
           uniqueEls.push(el);
@@ -373,7 +443,9 @@ var contours = (function contour () {
       var [key, val] = allAttributes[i];
       if(/^on/.test(key)) {
         if (typeof val === "function") {
-          elNode.addEventListener(key.replace(/^on/, ""), val);
+          key = key.replace(/^on/, "");
+          key = key[0].toLowerCase() + key.slice(1);
+          elNode.addEventListener(key, val);
         } else {
           console.warn(key + " property does not have a function for a value");
         }
@@ -407,7 +479,7 @@ var contours = (function contour () {
     });
   }
 
-  function nonEscapingHTML(val = "") {
+  function nonEscapingHTML (val = "") {
     return {
       [CONTOURS_NONESCAPING_HTML_KEY]: true,
       val: val 
@@ -416,23 +488,16 @@ var contours = (function contour () {
 
   // we're giving the contours function some extra properties.
   return Object.assign(_contours, {
-    escapeHTML: escapeHTML,
-    nonEscapingHTML: nonEscapingHTML,
-    textNode: function (text) {
-      return document.createTextNode(text);
-    },
-    custom: custom,
-    attributes: attributes
+    safeHTML,
+    custom: custom
   });
 }());
 
 export default contours;
 
-var {escapeHTML, textNode, custom, attributes} = contours;
+var { custom, safeHTML } = contours;
 
 export {
-  escapeHTML,
-  textNode,
-  custom,
-  attributes
+  safeHTML,
+  custom
 }

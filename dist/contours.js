@@ -17,21 +17,6 @@
     value: true
   });
 
-  function _defineProperty(obj, key, value) {
-    if (key in obj) {
-      Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
-    } else {
-      obj[key] = value;
-    }
-
-    return obj;
-  }
-
   var _slicedToArray = function () {
     function sliceIterator(arr, i) {
       var _arr = [];
@@ -69,6 +54,21 @@
       }
     };
   }();
+
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
 
   var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
     return typeof obj;
@@ -126,23 +126,9 @@
     CONTOURS_UNIQUE_CLASS = "contours-shouldBeUnique",
 
     // added to objects to show that the object is meant to be an hold escaped html
-    CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__";
+    CONTOURS_NONESCAPING_HTML_KEY = "__contours_nonEscapingHTML__",
+        CONTOURS_HTML_STRING = "__contours_html_string__";
     var jQueryTemp = typeof jQuery !== "undefined" ? jQuery : function noJQuery() {};
-
-    // var __entityMap = {
-    //     "&": "&amp;",
-    //     "<": "&lt;",
-    //     ">": "&gt;",
-    //     '"': '&quot;',
-    //     "'": '&#39;',
-    //     "/": '&#x2F;'
-    // };
-    //
-    // function escapeHTML (str) {
-    //     return str.replace(/[&<>"'\/]/g, function (s) {
-    //         return __entityMap[s];
-    //     });
-    // }
 
     function escapeHTML(str) {
       // this is a basic parser
@@ -159,6 +145,44 @@
       var el = document.createElement("template");
       el.innerHTML = markup;
       return el.content.childNodes;
+    }
+
+    function appendFrag(nodes) {
+      var fragment = document.createDocumentFragment();
+      var length = nodes.length;
+      for (var i = 0; i < length; ++i) {
+        fragment.appendChild(nodes[0]);
+      }
+      return fragment;
+    }
+
+    function parseHTMLDocFrag(markup) {
+      return appendFrag(parseHTML(markup));
+    }
+
+    function _toFrag(html, options) {
+      var defaults = {
+        scripts: false
+      };
+      options = Object.assign({}, defaults, options);
+      var frag = void 0;
+      if ((typeof html === 'undefined' ? 'undefined' : _typeof(html)) === "object" && html[CONTOURS_HTML_STRING]) {
+        frag = parseHTMLDocFrag(html.data);
+      } else if (typeof html === "string") {
+        frag = parseHTMLDocFrag(html);
+      } else {
+        throw new Error("type should be a string or contours string");
+      }
+      if (options.scripts) {
+        var scripts = [].slice.call(frag.childNodes).reduce(function (arr, node) {
+          return arr.concat([].slice.call(node.getElementsByTagName("script")));
+        }, []);
+        scripts = [].slice.call(scripts);
+        for (var i = 0; i < scripts.length; ++i) {
+          enableScript(scripts[i]);
+        }
+      }
+      return frag;
     }
 
     function getReplaceText(strings, index) {
@@ -192,6 +216,17 @@
         } else if (Array.isArray(value)) {
           // value is Array element
           // call getNode recursively for each element of the array.
+          if (value.every(function (val) {
+            return typeof val === 'string' || (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && val[CONTOURS_HTML_STRING];
+          })) {
+            html += getHTMLForStringHTML(value);
+            if (!docFrag) {
+              return html;
+            } else {
+              docFrag.appendChild(parseHTMLDocFrag(html));
+              return html;
+            }
+          }
           var frag = document.createDocumentFragment();
           for (i = 0; i < value.length; ++i) {
             html += getNode(nodeValues, attributeValues, value[i], strings, index, frag);
@@ -202,32 +237,19 @@
           } else {
             docFrag.appendChild(frag);
           }
-        } else if (Array.isArray(value)) {
-          // value is Array element
-          // call getNode recursively for each element of the array.
+        } else if (value instanceof NodeList || value instanceof HTMLCollection) {
+          // value is some form of NodeList
+          // call getNode recursively for each element
           var _frag = document.createDocumentFragment();
-          for (i = 0; i < value.length; ++i) {
-            html += getNode(nodeValues, attributeValues, value[i], strings, index, _frag);
-          }
+          value = [].slice.call(value);
           if (!docFrag) {
+            for (i = 0; i < value.length; ++i) {
+              getNode(nodeValues, attributeValues, value[i], strings, index, _frag);
+            }
             html += getReplaceText(strings, index);
             nodeValues.push(_frag);
           } else {
             docFrag.appendChild(_frag);
-          }
-        } else if (value instanceof NodeList || value instanceof HTMLCollection) {
-          // value is some form of NodeList
-          // call getNode recursively for each element
-          var _frag2 = document.createDocumentFragment();
-          value = [].slice.call(value);
-          if (!docFrag) {
-            for (i = 0; i < value.length; ++i) {
-              getNode(nodeValues, attributeValues, value[i], strings, index, _frag2);
-            }
-            html += getReplaceText(strings, index);
-            nodeValues.push(_frag2);
-          } else {
-            docFrag.appendChild(_frag2);
           }
         } else if (value !== null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === "object") {
           // checking for special contours objects which have
@@ -249,17 +271,77 @@
               throw new Error("There shouldn't be injectable HTML inside an array given to contours. Value given: " + JSON.stringify(value));
             }
             html += value.val;
+          } else if (value[CONTOURS_HTML_STRING]) {
+            if (!docFrag) {
+              html += value.data;
+            } else {
+              docFrag.appendChild(parseHTMLDocFrag(value.data));
+            }
           }
         } else {
           // escape value otherwise
           if (!docFrag) {
-            html += contours.escapeHTML("" + value);
+            html += escapeHTML("" + value);
           } else {
-            docFrag.appendChild(contours.textNode(value));
+            docFrag.appendChild(document.createTextNode(value));
           }
         }
       }
       return html;
+    }
+
+    function getHTMLForStringHTML(values) {
+      return values.reduce(function (html, val) {
+        if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === "object" && val[CONTOURS_HTML_STRING]) {
+          return html + val.data;
+        } else {
+          return html + escapeHTML(val);
+        }
+      }, "");
+    }
+
+    function safeHTML(strings) {
+      var _ref;
+
+      var html = "";
+      var i = void 0;
+
+      for (var _len = arguments.length, values = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        values[_key - 1] = arguments[_key];
+      }
+
+      for (i = 0; i < values.length; ++i) {
+        var string = strings[i];
+        var value = values[i];
+        var prev2Chars = string.slice(-2);
+        if (prev2Chars == "$*") {
+          // makes the value injectable html 
+          // WARNING: this is not safe...
+          string = string.slice(0, -2);
+          // do nothing to value just let it be concatenated
+        } else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === "object" && value[CONTOURS_HTML_STRING]) {
+          value = value.data;
+        } else if (Array.isArray(value)) {
+          value = getHTMLForStringHTML(value);
+        } else {
+          value = escapeHTML("" + value);
+        }
+
+        html += strings[i];
+
+        if (Array.isArray(value)) {
+          for (var j = 0; i < value.length; ++i) {
+            html += value;
+          }
+        } else {
+          html += value;
+        }
+      }
+      html += strings[i];
+
+      return _ref = {}, _defineProperty(_ref, CONTOURS_HTML_STRING, true), _defineProperty(_ref, 'data', html), _defineProperty(_ref, 'toFrag', function toFrag(options) {
+        return _toFrag(html, options);
+      }), _ref;
     }
 
     function DOMTemplate(strings, values) {
@@ -270,7 +352,7 @@
       // then a linking process to link values that can't be
       // added with pure strings like DOM elements and the like
       var defaults = {
-        includeScripts: false
+        scripts: false
       };
 
       options = Object.assign({}, defaults, options);
@@ -294,24 +376,19 @@
           // add the value as a text node at current string location
           // it's up to the user to guarantee that they
           // have a valid placement
-          value = contours.textNode(value);
+          value = document.createTextNode(value);
           string = string.slice(0, -2);
         } else if (prev2Chars == "$@") {
           // add the value as an attribute to the element at current string location
           // it's up to the user to guarantee that they
           // have a valid placement
-          value = contours.attributes(value);
+          value = attributes(value);
           string = string.slice(0, -2);
         } else if (prev2Chars == "$*") {
           // makes the value injectable html 
           // WARNING: this is not safe...
-          value = contours.nonEscapingHTML(value);
+          value = nonEscapingHTML(value);
           string = string.slice(0, -2);
-        } else if (string.slice(-1) == "$") {
-          // escaping is the default now but make sure its a string
-          // so it gets escaped
-          value = "" + value;
-          string = string.slice(0, -1);
         }
 
         html += string;
@@ -325,16 +402,12 @@
       // adding in the values given by the user.
       nodes = parseHTML(html);
       var arrNodes = [].slice.call(nodes);
-      for (var _i = 0; _i < nodes.length; ++_i) {
-        if (!(attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts)) {
+      if (!(attributeValues.length === 0 && nodeValues.length === 0 && !options.scripts)) {
+        for (var _i = 0; _i < nodes.length; ++_i) {
           traverseDOM(arrNodes[_i], nodeValues.slice(), attributeValues.slice(), options);
         }
       }
-      var fragment = document.createDocumentFragment();
-      var length = nodes.length;
-      for (var _i2 = 0; _i2 < length; ++_i2) {
-        fragment.appendChild(nodes[0]);
-      }
+      var fragment = appendFrag(nodes);
       return fragment;
     }
 
@@ -360,8 +433,8 @@
               node.removeAttribute(CONTOURS_ATTRIBUTES_TEMP_ATTR);
             }
           }
-          if (options.includeScripts && (node.tagName || "").toUpperCase() === 'SCRIPT') {
-            node.parentNode.replaceChild(nodeScriptClone(node), node);
+          if (options.scripts && (node.tagName || "").toUpperCase() === 'SCRIPT') {
+            enableScript(node);
           }
         }
 
@@ -370,7 +443,7 @@
           var children = node.childNodes;
           for (var i = 0; i < children.length; i++) {
             var child = children[i];
-            if (attributeValues.length === 0 && nodeValues.length === 0 && !options.includeScripts) {
+            if (attributeValues.length === 0 && nodeValues.length === 0 && !options.scripts) {
               return;
             } else {
               traverseDOM(child, nodeValues, attributeValues, options);
@@ -378,6 +451,10 @@
           }
         }
       }
+    }
+
+    function enableScript(node) {
+      node.parentNode.replaceChild(nodeScriptClone(node), node);
     }
 
     function nodeScriptClone(node) {
@@ -392,7 +469,7 @@
     function setAttributesAll(nodes, attributeValues) {
       var j = 0;
       nodes.forEach(function (el) {
-        if (typeof el.getElementsByClassName === "function") {
+        if (typeof el.querySelectorAll === "function") {
           j;
           var uniqueEls = [].slice.call(el.querySelectorAll('[' + CONTOURS_ATTRIBUTES_TEMP_TXT + ']'));
           if (el.hasAttribute(CONTOURS_ATTRIBUTES_TEMP_TXT)) {
@@ -467,7 +544,9 @@
 
         if (/^on/.test(key)) {
           if (typeof val === "function") {
-            elNode.addEventListener(key.replace(/^on/, ""), val);
+            key = key.replace(/^on/, "");
+            key = key[0].toLowerCase() + key.slice(1);
+            elNode.addEventListener(key, val);
           } else {
             console.warn(key + " property does not have a function for a value");
           }
@@ -484,8 +563,8 @@
     }
 
     function _contours(html) {
-      for (var _len = arguments.length, values = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        values[_key - 1] = arguments[_key];
+      for (var _len2 = arguments.length, values = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        values[_key2 - 1] = arguments[_key2];
       }
 
       return DOMTemplate(html, values);
@@ -493,8 +572,8 @@
 
     function custom(options) {
       return function _contoursCustom(html) {
-        for (var _len2 = arguments.length, values = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-          values[_key2 - 1] = arguments[_key2];
+        for (var _len3 = arguments.length, values = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+          values[_key3 - 1] = arguments[_key3];
         }
 
         return DOMTemplate(html, values, options);
@@ -506,32 +585,23 @@
     }
 
     function nonEscapingHTML() {
-      var _ref;
+      var _ref2;
 
       var val = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
 
-      return _ref = {}, _defineProperty(_ref, CONTOURS_NONESCAPING_HTML_KEY, true), _defineProperty(_ref, 'val', val), _ref;
+      return _ref2 = {}, _defineProperty(_ref2, CONTOURS_NONESCAPING_HTML_KEY, true), _defineProperty(_ref2, 'val', val), _ref2;
     }
 
     // we're giving the contours function some extra properties.
     return Object.assign(_contours, {
-      escapeHTML: escapeHTML,
-      nonEscapingHTML: nonEscapingHTML,
-      textNode: function textNode(text) {
-        return document.createTextNode(text);
-      },
-      custom: custom,
-      attributes: attributes
+      safeHTML: safeHTML,
+      custom: custom
     });
   }();
 
   exports.default = contours;
-  var escapeHTML = contours.escapeHTML,
-      textNode = contours.textNode,
-      custom = contours.custom,
-      attributes = contours.attributes;
-  exports.escapeHTML = escapeHTML;
-  exports.textNode = textNode;
+  var custom = contours.custom,
+      safeHTML = contours.safeHTML;
+  exports.safeHTML = safeHTML;
   exports.custom = custom;
-  exports.attributes = attributes;
 });

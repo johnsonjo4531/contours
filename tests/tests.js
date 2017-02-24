@@ -25,20 +25,20 @@
       _templateObject2 = _taggedTemplateLiteral(["<h1>Greetings</h1>", ""], ["<h1>Greetings</h1>", ""]),
       _templateObject3 = _taggedTemplateLiteral(["\n    <div>\n      ", "\n    </div>\n  "], ["\n    <div>\n      ", "\n    </div>\n  "]),
       _templateObject4 = _taggedTemplateLiteral(["\n    <div>\n      ", "", "\n    </div>\n  "], ["\n    <div>\n      ", "", "\n    </div>\n  "]),
-      _templateObject5 = _taggedTemplateLiteral(["\n    <div>\n      ...\n      <div class=\"js-insertUserText\">", "</div>\n      ...\n    </div>\n  "], ["\n    <div>\n      ...\n      <div class=\"js-insertUserText\">", "</div>\n      ...\n    </div>\n  "]),
+      _templateObject5 = _taggedTemplateLiteral(["\n    <div>\n      ...\n      <div class=\"js-insertUserText\">$#", "</div>\n      ...\n    </div>\n  "], ["\n    <div>\n      ...\n      <div class=\"js-insertUserText\">$#", "</div>\n      ...\n    </div>\n  "]),
       _templateObject6 = _taggedTemplateLiteral(["\n    <div>\n      ...\n      ", "\n      ...\n    </div>\n  "], ["\n    <div>\n      ...\n      ", "\n      ...\n    </div>\n  "]),
       _templateObject7 = _taggedTemplateLiteral(["\n      <ul>\n        ", "\n      </ul>\n    "], ["\n      <ul>\n        ", "\n      </ul>\n    "]),
       _templateObject8 = _taggedTemplateLiteral(["<li class=\"li-", "\">", "</li>"], ["<li class=\"li-", "\">", "</li>"]),
       _templateObject9 = _taggedTemplateLiteral(["<li class=\"li-", "\">$#", "</li>"], ["<li class=\"li-", "\">$#", "</li>"]),
       _templateObject10 = _taggedTemplateLiteral(["\n      <table>\n        <tbody>\n          ", "\n        </tbody>\n      </table>\n    "], ["\n      <table>\n        <tbody>\n          ", "\n        </tbody>\n      </table>\n    "]),
       _templateObject11 = _taggedTemplateLiteral(["<tr>", "</tr>"], ["<tr>", "</tr>"]),
-      _templateObject12 = _taggedTemplateLiteral(["<td>", "</td>"], ["<td>", "</td>"]),
-      _templateObject13 = _taggedTemplateLiteral(["<div data-name=\"$*", "\"></div>"], ["<div data-name=\"$*", "\"></div>"]),
-      _templateObject14 = _taggedTemplateLiteral(["<div data-name=\"", "\"></div>"], ["<div data-name=\"", "\"></div>"]),
-      _templateObject15 = _taggedTemplateLiteral(["<div data-name=\"$", "\"></div>"], ["<div data-name=\"$", "\"></div>"]),
-      _templateObject16 = _taggedTemplateLiteral(["<h1 ", ">world</h1>"], ["<h1 ", ">world</h1>"]),
-      _templateObject17 = _taggedTemplateLiteral(["<h1 $@", "></h1>"], ["<h1 $@", "></h1>"]),
-      _templateObject18 = _taggedTemplateLiteral(["<h1 ", "></h1>"], ["<h1 ", "></h1>"]);
+      _templateObject12 = _taggedTemplateLiteral(["<td>$#", "</td>"], ["<td>$#", "</td>"]),
+      _templateObject13 = _taggedTemplateLiteral(["<div>Actually the DOM is fast.</div>"], ["<div>Actually the DOM is fast.</div>"]),
+      _templateObject14 = _taggedTemplateLiteral(["<div>", "</div>"], ["<div>", "</div>"]),
+      _templateObject15 = _taggedTemplateLiteral(["<div data-name=\"$*", "\"></div>"], ["<div data-name=\"$*", "\"></div>"]),
+      _templateObject16 = _taggedTemplateLiteral(["<div data-name=\"", "\"></div>"], ["<div data-name=\"", "\"></div>"]),
+      _templateObject17 = _taggedTemplateLiteral(["<h1 $@", ">world</h1>"], ["<h1 $@", ">world</h1>"]),
+      _templateObject18 = _taggedTemplateLiteral(["<h1 $@", "></h1>"], ["<h1 $@", "></h1>"]);
 
   function _taggedTemplateLiteral(strings, raw) {
     return Object.freeze(Object.defineProperties(strings, {
@@ -79,7 +79,7 @@
     // create new element
     resultHTML = "<div>\n      ...\n      <div class=\"js-insertUserText\">" + userText + "</div>\n      ...\n    </div>";
 
-    sameResult = (0, _contours2.default)(_templateObject5, _contours2.default.textNode(userText));
+    sameResult = (0, _contours2.default)(_templateObject5, userText);
 
     assert.equal(sameResult.firstChild.outerHTML, resultHTML, "Properly adds text nodes.");
 
@@ -117,7 +117,7 @@
 
     var table = (0, _contours2.default)(_templateObject10, data.map(function (data) {
       return (0, _contours2.default)(_templateObject11, data.map(function (datum) {
-        return (0, _contours2.default)(_templateObject12, _contours2.default.textNode(datum));
+        return (0, _contours2.default)(_templateObject12, datum);
       }));
     }));
 
@@ -130,41 +130,60 @@
     assert.equal(table.firstChild.outerHTML, sameTable, "Construct table elements.");
   });
 
-  QUnit.test("simpleEscape works as expected", function (assert) {
-    var escapeHTML = _contours2.default.escapeHTML;
+  QUnit.test("contours safeHTML function works as expected", function (assert) {
+    var numDivs = 1;
+    var safeHTML = _contours2.default.safeHTML;
 
+    var sfInnerHTML = Array.from(Array(numDivs).keys()).map(function () {
+      return safeHTML(_templateObject13);
+    });
+    var sfHTML = safeHTML(_templateObject14, sfInnerHTML).toFrag();
+
+    var innerHTML = Array.from(Array(numDivs).keys()).map(function () {
+      return "<div>Actually the DOM is fast.</div>";
+    }).join("");
+    var div = document.createElement("div");
+
+    div.innerHTML = innerHTML;
+
+    assert.equal(sfHTML.firstChild.outerHTML, div.outerHTML, "Construct safeHTML elements.");
+
+    var mixedHTML = (0, _contours2.default)(_templateObject14, sfInnerHTML);
+
+    assert.equal(mixedHTML.firstChild.outerHTML, div.outerHTML, "Construct mixed safeHTML and contours elements.");
+  });
+
+  QUnit.test("escaping works as expected", function (assert) {
     var userText = '"><script>window.callback(); // malicous code could be here</script><div class="';
-    window.callback = sinon.spy();
-
-    document.body.appendChild(_contours2.default.custom({
-      includeScripts: true
-    })(_templateObject13, userText));
-
-    assert.ok(window.callback.called, "user script is called when includeScripts is true and escape is not called");
+    var safeHTML = _contours2.default.safeHTML;
 
     window.callback = sinon.spy();
 
     document.body.appendChild(_contours2.default.custom({
-      includeScripts: true
-    })(_templateObject14, escapeHTML(userText)));
-
-    assert.ok(!window.callback.called, "escaped user script isn't ran");
-
-    window.callback = sinon.spy();
-
-    document.body.appendChild(_contours2.default.custom({
-      includeScripts: true
+      scripts: true
     })(_templateObject15, userText));
 
+    assert.ok(window.callback.called, "user script is called when scripts is true and escape is not called");
+
+    window.callback = sinon.spy();
+
+    document.body.appendChild(_contours2.default.custom({
+      scripts: true
+    })(_templateObject16, userText));
+
     assert.ok(!window.callback.called, "escaped user script isn't ran");
+
+    document.body.appendChild(safeHTML(_templateObject15, userText).toFrag({ scripts: true }));
+
+    assert.ok(window.callback.called, "unescaped user script is ran");
   });
 
   QUnit.test("contours attributes functions works as expected", function (assert) {
-
-    assert.equal('<h1 class="true">world</h1>', (0, _contours2.default)(_templateObject16, _contours2.default.attributes({ class: "true" })).firstChild.outerHTML, "basic h1 with text and attributes.");
-    assert.equal('<h1 data-action="true"></h1>', (0, _contours2.default)(_templateObject17, { "data-action": "true" }).firstChild.outerHTML, "basic h1 with data-attributes no text w/ skipping of second param.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, _contours2.default.attributes({ style: "padding: 10px; margin: 10px; line-height: 1em;" })).firstChild.outerHTML, "basic h1 with style attribute string.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, _contours2.default.attributes({ style: { padding: "10px", margin: "10px", lineHeight: "1em" } })).firstChild.outerHTML, "basic h1 with style attributes object.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, _contours2.default.attributes({ style: { padding: "10px", margin: "10px", "line-height": "1em" } })).firstChild.outerHTML, "basic h1 with style attributes object no camel case.");
+    window.callback = sinon.spy();
+    assert.equal('<h1 class="true">world</h1>', (0, _contours2.default)(_templateObject17, { class: "true" }).firstChild.outerHTML, "basic h1 with text and attributes.");
+    assert.equal('<h1 data-action="true"></h1>', (0, _contours2.default)(_templateObject18, { "data-action": "true" }).firstChild.outerHTML, "basic h1 with data-attributes no text w/ skipping of second param.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: "padding: 10px; margin: 10px; line-height: 1em;" }).firstChild.outerHTML, "basic h1 with style attribute string.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: { padding: "10px", margin: "10px", lineHeight: "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: { padding: "10px", margin: "10px", "line-height": "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object no camel case.");
   });
 });

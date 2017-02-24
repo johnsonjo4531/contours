@@ -52,7 +52,7 @@ QUnit.test( "contours main function works as expected", function( assert ) {
   sameResult = contours`
     <div>
       ...
-      <div class="js-insertUserText">${contours.textNode(userText)}</div>
+      <div class="js-insertUserText">$#${userText}</div>
       ...
     </div>
   `;
@@ -120,7 +120,7 @@ QUnit.test( "contours main function works as expected", function( assert ) {
       <table>
         <tbody>
           ${data.map(data => {
-            return contours`<tr>${data.map((datum) => contours`<td>${contours.textNode(datum)}</td>`)}</tr>`;
+            return contours`<tr>${data.map((datum) => contours`<td>$#${datum}</td>`)}</tr>`;
           })}
         </tbody>
       </table>
@@ -137,48 +137,64 @@ QUnit.test( "contours main function works as expected", function( assert ) {
     assert.equal(table.firstChild.outerHTML, sameTable, "Construct table elements.");
 });
 
-QUnit.test( "simpleEscape works as expected", function( assert ) {
-  var {escapeHTML} = contours;
+QUnit.test( "contours safeHTML function works as expected", function( assert ) {
+  let numDivs = 1;
+  let { safeHTML } = contours;
+  var sfInnerHTML = Array.from(Array(numDivs).keys())
+                    .map(() => safeHTML`<div>Actually the DOM is fast.</div>`);
+    var sfHTML = safeHTML`<div>${sfInnerHTML}</div>`.toFrag();
+
+  var innerHTML = Array.from(Array(numDivs).keys())
+                    .map(() =>`<div>Actually the DOM is fast.</div>`).join("");
+    var div = document.createElement("div");
+
+    div.innerHTML = innerHTML;
+
+    assert.equal(sfHTML.firstChild.outerHTML, div.outerHTML, "Construct safeHTML elements.");
+
+    var mixedHTML = contours`<div>${sfInnerHTML}</div>`;
+
+    assert.equal(mixedHTML.firstChild.outerHTML, div.outerHTML, "Construct mixed safeHTML and contours elements.");
+});
+
+QUnit.test( "escaping works as expected", function( assert ) {
   var userText = '"><script>window.callback(); // malicous code could be here</script><div class="';
+  let { safeHTML } = contours;
   window.callback = sinon.spy();
 
   document.body.appendChild(
     contours.custom({
-      includeScripts: true
+      scripts: true
     })`<div data-name="$*${userText}"></div>`
   );
 
 
-  assert.ok(window.callback.called, "user script is called when includeScripts is true and escape is not called");
+  assert.ok(window.callback.called, "user script is called when scripts is true and escape is not called");
 
 
   window.callback = sinon.spy();
 
   document.body.appendChild(
     contours.custom({
-      includeScripts: true
-    })`<div data-name="${escapeHTML(userText)}"></div>`
+      scripts: true
+    })`<div data-name="${userText}"></div>`
   );
 
   assert.ok(!window.callback.called, "escaped user script isn't ran");
-
-  window.callback = sinon.spy();
 
   document.body.appendChild(
-    contours.custom({
-      includeScripts: true
-    })`<div data-name="$${userText}"></div>`
+    safeHTML`<div data-name="$*${userText}"></div>`.toFrag({scripts: true})
   );
 
-  assert.ok(!window.callback.called, "escaped user script isn't ran");
+  assert.ok(window.callback.called, "unescaped user script is ran");
 });
 
 QUnit.test( "contours attributes functions works as expected", function( assert ) {
-
-  assert.equal( '<h1 class="true">world</h1>', contours`<h1 ${contours.attributes({class: "true" })}>world</h1>`.firstChild.outerHTML, "basic h1 with text and attributes." );
+  window.callback = sinon.spy();
+  assert.equal( '<h1 class="true">world</h1>', contours`<h1 $@${({class: "true" })}>world</h1>`.firstChild.outerHTML, "basic h1 with text and attributes." );
   assert.equal( '<h1 data-action="true"></h1>', contours`<h1 $@${{"data-action": "true" }}></h1>`.firstChild.outerHTML, "basic h1 with data-attributes no text w/ skipping of second param." );
-  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 ${contours.attributes({style: "padding: 10px; margin: 10px; line-height: 1em;" })}></h1>`.firstChild.outerHTML, "basic h1 with style attribute string." );
-  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 ${contours.attributes({style: {padding: "10px", margin: "10px", lineHeight: "1em"} })}></h1>`.firstChild.outerHTML, "basic h1 with style attributes object." );
-  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 ${contours.attributes( {style: {padding: "10px", margin: "10px", "line-height": "1em"} })}></h1>`.firstChild.outerHTML, "basic h1 with style attributes object no camel case." );
+  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 $@${({style: "padding: 10px; margin: 10px; line-height: 1em;" })}></h1>`.firstChild.outerHTML, "basic h1 with style attribute string." );
+  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 $@${({style: {padding: "10px", margin: "10px", lineHeight: "1em"} })}></h1>`.firstChild.outerHTML, "basic h1 with style attributes object." );
+  assert.equal( '<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', contours`<h1 $@${( {style: {padding: "10px", margin: "10px", "line-height": "1em"} })}></h1>`.firstChild.outerHTML, "basic h1 with style attributes object no camel case." );
 
 });

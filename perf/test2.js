@@ -1,8 +1,10 @@
-let rows = 10000;
+let rows = 1000;
 let columns = 10;
+var fragment;
 let time = getPerf(() => {
     rows = rows;
-    var fragment = document.createDocumentFragment();
+    fragment = fragment;
+    fragment = document.createDocumentFragment();
     var table = document.createElement('table');
     for(let i = 0; i < rows; ++i){
         // newDiv.setAttribute("data-cntrs-srchd", true);
@@ -17,13 +19,16 @@ let time = getPerf(() => {
         table.appendChild(tr);
     }
     fragment.appendChild(table);
-    document.body.appendChild(fragment);
 });
+
+//document.body.appendChild(fragment);
 
 report(`Vanilla JS time: ${time} ms.`);
 
+var frag;
+
 time = getPerf(() => {
-    var frag = contours`
+    frag = contours`
     <table>
         ${[...Array(rows).keys()].map((i) => {
                 return contours`<tr>${
@@ -33,58 +38,80 @@ time = getPerf(() => {
         }
     </table>
     `;
-
-    document.body.appendChild(frag);
 });
 
-report(`contours time: ${time} ms.`);
+//document.body.appendChild(frag);
 
-time = getPerf(() => {
-    var frag = contours`
-    <table>
-        ${[...Array(rows).keys()].reduce((frag, i) => {
-                frag.appendChild(contours`<tr>${
-                    [...Array(columns).keys()].reduce((frag)=> {
-                        frag.appendChild(contours`<td>${i}</td>`);
-                        return frag;
-                    }, document.createDocumentFragment())
-                }</tr>`);
-                return frag;
-            }, document.createDocumentFragment())
-        }
-    </table>
-    `;
-
-    document.body.appendChild(frag);
-});
-
-report(`contours time reduce: ${time} ms.`);
+report(`contours time map: ${time} ms.`);
 
 function reduceFrag (arr, cbFunc) {
     arr.reduce((frag, el, i, arr) => {
         frag.appendChild(cbFunc(el, i, arr));
-        return frag
+        return frag;
     }, document.createDocumentFragment());
 }
 
 time = getPerf(() => {
     var frag = contours`
     <table>
-        ${[...Array(rows).keys()].reduce((frag, i) => {
-                frag.appendChild(contours`<tr>${
-                    [...Array(columns).keys()].reduce((frag)=> {
-                        frag.appendChild(contours`<td>${i}</td>`);
-                        return frag;
-                    }, document.createDocumentFragment())
-                }</tr>`);
-                return frag;
-            }, document.createDocumentFragment())
-        }
+        ${reduceFrag([...Array(rows).keys()], (i) => contours`<tr>${
+            reduceFrag([...Array(columns).keys()], ()=> contours`<td>${i}</td>`)
+            })}</tr>`)
+            }
     </table>
     `;
-
-    document.body.appendChild(frag);
 });
 
 report(`contours time reduce: ${time} ms.`);
+
+var safeHTML = contours.safeHTML;
+let frag;
+time = getPerf(() => {
+    frag = contours`
+    <table>
+        ${[...Array(rows).keys()].map((i) => {
+                return safeHTML`<tr>${
+                    [...Array(columns).keys()].map(()=> safeHTML`<td>${i}</td>`)
+                }</tr>`
+            })
+        }
+    </table>
+    `;
+});
+document.body.appendChild(frag);
+report(`contours string time with outer contours: ${time} ms.`);
+
+time = getPerf(() => {
+    var html = safeHTML`
+    <table>
+        ${[...Array(rows).keys()].map((i) => {
+                return safeHTML`<tr>${
+                    [...Array(columns).keys()].map(()=> safeHTML`<td>${i}</td>`)
+                }</tr>`
+            })
+        }
+    </table>
+    `;
+    frag = html.toFrag();
+});
+
+//document.body.appendChild(frag);
+report(`contours string time with only safeHTML: ${time} ms.`);
+
+time = getPerf(() => {
+    var html = `
+    <table>
+        ${[...Array(rows).keys()].map((i) => {
+                return `<tr>${
+                    [...Array(columns).keys()].map(()=> `<td>${i}</td>`).join("")
+                }</tr>`
+            }).join("")
+        }
+    </table>
+    `;
+    var div = document.createElement("div");
+    div.innerHTML = html;
+});
+
+report(`Vanilla JS innerHTML: ${time} ms.`);
 
