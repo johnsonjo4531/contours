@@ -1,0 +1,50 @@
+.stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around; 
+  flex: 1;
+  padding: 10px 20px;
+  background-color: #fff;
+  border-left: 1px solid #777;
+  align-items: center;
+}
+
+.overlay {
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+}
+
+.stat-red {
+    background-color:rgba(255, 0, 0, 0.3);
+}
+
+.stat-green {
+    background-color:rgba(0, 255, 0, 0.3);
+}
+
+.stats > * {
+  margin: 5px 0;
+}
+
+.stat-name {
+  display: flex;
+  justify-content: center;
+  align-items:center;
+  flex: 2;
+  background-color: tomato;
+  padding: 10px;
+  background-color: #eee;
+}
+
+.stat-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  min-height: 100px;
+  border: 1px solid #777;
+  position: relative;
+  margin: 10px;
+}

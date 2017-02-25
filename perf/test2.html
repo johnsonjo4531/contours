@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width">
   <title>Perf Profiling 2</title>
   <!-- Latest compiled and minified CSS -->
-  <link rel="stylesheet" href="../node_modules/qunitjs/qunit/qunit.css">
+  <link rel="stylesheet" href="stats.css">
 </head>
 <body>
-  <div id="qunit"></div>
-  <div id="qunit-fixture"></div>
-  <!--<script src="../src/es6/jQTemplate.js"></script>-->
+  <div id="stat-container"></div>
   <script src="../dist/contours.js"></script>
   <script>
     contours = contours.default;
   </script>
+  <script src="../node_modules/benchmark/node_modules/lodash/lodash.js"></script>
+  <script src="../node_modules/benchmark/node_modules/platform/platform.js"></script>
+  <script src="../node_modules/benchmark/benchmark.js"></script>
   <script src="perf.js"></script>
   <script src="test2.js"></script>
 </body>
