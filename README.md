@@ -49,9 +49,10 @@ document.body.appendChild(docFrag);
 Use the safeHTML method of contours when creating lots of nodes.
 
 ```
-var data = [1, 2, 3];
+let { safeHTML } = contours;
+var data = [...Array(1000).keys()];
 var getSafeHTML = (datum => safeHTML`<div>${datum}</div>`);
-var obj = contours.safeHTML`
+var obj = safeHTML`
 <div>
   ${data.map(getSafeHTML)}
 </div>
