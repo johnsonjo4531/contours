@@ -35,10 +35,11 @@
       _templateObject12 = _taggedTemplateLiteral(["<td>$#", "</td>"], ["<td>$#", "</td>"]),
       _templateObject13 = _taggedTemplateLiteral(["<div>Actually the DOM is fast.</div>"], ["<div>Actually the DOM is fast.</div>"]),
       _templateObject14 = _taggedTemplateLiteral(["<div>", "</div>"], ["<div>", "</div>"]),
-      _templateObject15 = _taggedTemplateLiteral(["<div data-name=\"$*", "\"></div>"], ["<div data-name=\"$*", "\"></div>"]),
-      _templateObject16 = _taggedTemplateLiteral(["<div data-name=\"", "\"></div>"], ["<div data-name=\"", "\"></div>"]),
-      _templateObject17 = _taggedTemplateLiteral(["<h1 $@", ">world</h1>"], ["<h1 $@", ">world</h1>"]),
-      _templateObject18 = _taggedTemplateLiteral(["<h1 $@", "></h1>"], ["<h1 $@", "></h1>"]);
+      _templateObject15 = _taggedTemplateLiteral(["<div>$*", "</div>"], ["<div>$*", "</div>"]),
+      _templateObject16 = _taggedTemplateLiteral(["<div data-name=\"$*", "\"></div>"], ["<div data-name=\"$*", "\"></div>"]),
+      _templateObject17 = _taggedTemplateLiteral(["<div data-name=\"", "\"></div>"], ["<div data-name=\"", "\"></div>"]),
+      _templateObject18 = _taggedTemplateLiteral(["<h1 $@", ">world</h1>"], ["<h1 $@", ">world</h1>"]),
+      _templateObject19 = _taggedTemplateLiteral(["<h1 $@", "></h1>"], ["<h1 $@", "></h1>"]);
 
   function _taggedTemplateLiteral(strings, raw) {
     return Object.freeze(Object.defineProperties(strings, {
@@ -48,6 +49,11 @@
     }));
   }
 
+  // import $ from "../node_modules/jquery/dist/jquery.js";
+  // import QUnit from "../node_modules/qunitjs/qunit/qunit.js";
+  // import sinon from "../node_modules/sinon/pkg/sinon.js";
+
+  console.log("HERE IN MODULE");
   QUnit.test("contours main function works as expected", function (assert) {
     // Properly adds jQuery elements.
     var sameResult;
@@ -151,6 +157,11 @@
     var mixedHTML = (0, _contours2.default)(_templateObject14, sfInnerHTML);
 
     assert.equal(mixedHTML.firstChild.outerHTML, div.outerHTML, "Construct mixed safeHTML and contours elements.");
+
+    var actual = _contours2.default.safeHTML(_templateObject15, '<div>foo</div>').data;
+    var expected = "<div><div>foo</div></div>";
+
+    assert.equal(actual, expected);
   });
 
   QUnit.test("escaping works as expected", function (assert) {
@@ -161,7 +172,7 @@
 
     document.body.appendChild(_contours2.default.custom({
       scripts: true
-    })(_templateObject15, userText));
+    })(_templateObject16, userText));
 
     assert.ok(window.callback.called, "user script is called when scripts is true and escape is not called");
 
@@ -169,21 +180,21 @@
 
     document.body.appendChild(_contours2.default.custom({
       scripts: true
-    })(_templateObject16, userText));
+    })(_templateObject17, userText));
 
     assert.ok(!window.callback.called, "escaped user script isn't ran");
 
-    document.body.appendChild(safeHTML(_templateObject15, userText).toFrag({ scripts: true }));
+    document.body.appendChild(safeHTML(_templateObject16, userText).toFrag({ scripts: true }));
 
     assert.ok(window.callback.called, "unescaped user script is ran");
   });
 
   QUnit.test("contours attributes functions works as expected", function (assert) {
     window.callback = sinon.spy();
-    assert.equal('<h1 class="true">world</h1>', (0, _contours2.default)(_templateObject17, { class: "true" }).firstChild.outerHTML, "basic h1 with text and attributes.");
-    assert.equal('<h1 data-action="true"></h1>', (0, _contours2.default)(_templateObject18, { "data-action": "true" }).firstChild.outerHTML, "basic h1 with data-attributes no text w/ skipping of second param.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: "padding: 10px; margin: 10px; line-height: 1em;" }).firstChild.outerHTML, "basic h1 with style attribute string.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: { padding: "10px", margin: "10px", lineHeight: "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object.");
-    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject18, { style: { padding: "10px", margin: "10px", "line-height": "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object no camel case.");
+    assert.equal('<h1 class="true">world</h1>', (0, _contours2.default)(_templateObject18, { class: "true" }).firstChild.outerHTML, "basic h1 with text and attributes.");
+    assert.equal('<h1 data-action="true"></h1>', (0, _contours2.default)(_templateObject19, { "data-action": "true" }).firstChild.outerHTML, "basic h1 with data-attributes no text w/ skipping of second param.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject19, { style: "padding: 10px; margin: 10px; line-height: 1em;" }).firstChild.outerHTML, "basic h1 with style attribute string.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject19, { style: { padding: "10px", margin: "10px", lineHeight: "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object.");
+    assert.equal('<h1 style="padding: 10px; margin: 10px; line-height: 1em;"></h1>', (0, _contours2.default)(_templateObject19, { style: { padding: "10px", margin: "10px", "line-height": "1em" } }).firstChild.outerHTML, "basic h1 with style attributes object no camel case.");
   });
 });

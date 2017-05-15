@@ -239,7 +239,7 @@ var contours = (function contour () {
         value = escapeHTML("" +value);
       }
 
-      html += strings[i];
+      html += string;
 
       if(Array.isArray(value)) {
         for(let j = 0; i <value.length; ++i) {

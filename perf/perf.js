@@ -44,7 +44,7 @@ function getReport (benchmark, fastest) {
         </div>
         <div class="stats">
             <div>Mean: ${round(benchmark.stats.mean*1000)} milliseconds</div>
-            <div>Std. Deviatio: ${round(benchmark.stats.deviation*1000)} milliseconds</div>
+            <div>Std. Deviation: ${round(benchmark.stats.deviation*1000)} milliseconds</div>
             <div>${percent}%</div>
         </div>
         <div class="overlay ${getClass(percent)}">

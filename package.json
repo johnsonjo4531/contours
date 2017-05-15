@@ -30,6 +30,7 @@
     "gulp-print": "^2.0.1",
     "gulp-qunit": "^1.4.0",
     "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "2.6.0",
     "gulp-watch": "^4.3.6",
     "jquery": "^2.2.4",
     "karma": "^1.2.0",

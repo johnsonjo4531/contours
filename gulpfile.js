@@ -7,7 +7,8 @@ var gulp = require('gulp'),
     gWatch = require('gulp-watch'),
     qunit = require('gulp-qunit'),
     istanbul = require('gulp-istanbul'),
-    Server = require('karma').Server;
+    Server = require('karma').Server,
+    sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('default', ["watchSrc", "watchTest", "watchExamples"]);
 
@@ -20,7 +21,9 @@ gulp.task('watchSrc', function () {
               .pipe(plumber({
                   errorHandler: function (error) { /* elided */console.log(error); }
               }))
-              .pipe(babel())
+              .pipe(sourcemaps.init())
+              .pipe(babel({sourceMaps: true, compact: false}))
+              .pipe(sourcemaps.write('.'))
               .pipe(gulp.dest(buildLocation))
               .pipe(gprint(function(filePath){ return "File processed: " + filePath; }));
       }

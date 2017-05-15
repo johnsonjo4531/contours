@@ -327,7 +327,7 @@
           value = escapeHTML("" + value);
         }
 
-        html += strings[i];
+        html += string;
 
         if (Array.isArray(value)) {
           for (var j = 0; i < value.length; ++i) {
@@ -605,3 +605,4 @@
   exports.safeHTML = safeHTML;
   exports.custom = custom;
 });
+//# sourceMappingURL=contours.js.map

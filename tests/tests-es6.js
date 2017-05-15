@@ -1,5 +1,9 @@
 import contours from '../dist/contours';
+// import $ from "../node_modules/jquery/dist/jquery.js";
+// import QUnit from "../node_modules/qunitjs/qunit/qunit.js";
+// import sinon from "../node_modules/sinon/pkg/sinon.js";
 
+console.log("HERE IN MODULE");
 QUnit.test( "contours main function works as expected", function( assert ) {
   // Properly adds jQuery elements.
   var sameResult;
@@ -155,6 +159,12 @@ QUnit.test( "contours safeHTML function works as expected", function( assert ) {
     var mixedHTML = contours`<div>${sfInnerHTML}</div>`;
 
     assert.equal(mixedHTML.firstChild.outerHTML, div.outerHTML, "Construct mixed safeHTML and contours elements.");
+
+    var actual = contours.safeHTML`<div>$*${'<div>foo</div>'}</div>`.data;
+    var expected = `<div><div>foo</div></div>`;
+
+    assert.equal(actual, expected);
+
 });
 
 QUnit.test( "escaping works as expected", function( assert ) {
